@@ -11,14 +11,7 @@ import CoreData
 
 class TodoListViewController: UITableViewController {
 
-
     var itemArray = [Item]()
-    
-//    cia naudojam userDefaults saugoti duomenims. Sita reiktu naudoti TIK su lengvom ir paprastom, standartinem reiksmem/types
-//    let defaults = UserDefaults.standard
-    
-    // create the path to the document folder
-//    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
     // UIApplication.shared -> corresponds to the current app running. We are casting it to our class AppDelegate.swift
     // And now we have accesss to our class AppDelegate and it's properties
@@ -26,14 +19,13 @@ class TodoListViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
 //        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         loadItems()
 
     }
 
-    //MARK - Tableview Datasource methods
-    
+    //MARK: - Tableview Datasource methods
+
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemArray.count
     }
@@ -49,7 +41,6 @@ class TodoListViewController: UITableViewController {
         
         // Ternary operator ==>
         // value = condition ? valueIfTrue : valueIfFalse
-        
         cell.accessoryType = item.done ? .checkmark : .none
         
         return cell
@@ -58,16 +49,12 @@ class TodoListViewController: UITableViewController {
     //MARK: - TableView Delegate Methods
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-//        print(itemArray[indexPath.row])
-        
-        // sets the setting to the opposite with the - ! - help
+
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
         saveItems()
         
         tableView.deselectRow(at: indexPath, animated: true)
-        
-        tableView.reloadData()
 
     }
     
@@ -87,9 +74,7 @@ class TodoListViewController: UITableViewController {
             
             self.itemArray.append(newItem)
             self.saveItems()
-            
-//            self.defaults.set(self.itemArray, forKey: "TodoListArray")
-            self.tableView.reloadData()
+
         }
         
         alert.addTextField { (alertTextField) in
@@ -112,17 +97,20 @@ class TodoListViewController: UITableViewController {
             print("Error saving message, \(error)")
         }
         
+        tableView.reloadData()
+        
     }
     
-    func loadItems() {
-        let request: NSFetchRequest<Item> = Item.fetchRequest()
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
+        
         do {
             itemArray = try context.fetch(request)
         } catch {
             print("Error fetching data from context, \(error)")
         }
+        
+        tableView.reloadData()
     }
-
     
 }
 
@@ -131,32 +119,28 @@ class TodoListViewController: UITableViewController {
 extension TodoListViewController: UISearchBarDelegate {
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        print("paspaudziau")
+        filterTitles(by: searchBar.text!)
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+            loadItems()
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+        } else {
+            filterTitles(by: searchText)
+        }
+    }
+    
+    func filterTitles(by title: String) {
+        
+        let request: NSFetchRequest<Item> = Item.fetchRequest()
+        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", title)
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+        loadItems(with: request)
+        
     }
     
 }
-
-//    func saveItemsWithEncoder() {
-////        encoder buvo naudojamas saugojant duomenis i CoreData??
-//        let encoder = PropertyListEncoder()
-//
-//        do {
-//            // uzkoduoti su encoderiu.
-//            let data = try encoder.encode(itemArray)
-//            // irasyti uzkoduota info i filepath
-//            try data.write(to: dataFilePath!)
-//        } catch {
-//            print("Error encoding item array, \(error)")
-//        }
-//    }
-
-//func loadItems() {
-//    if let data = try? Data(contentsOf: dataFilePath!) {
-//        let decoder = PropertyListDecoder()
-//        do {
-//            itemArray = try decoder.decode([ItemNotUsingAnymoreLeftForMemories].self, from: data)
-//        } catch {
-//            print("Error decoding item array, \(error)")
-//        }
-//    }
-//}
