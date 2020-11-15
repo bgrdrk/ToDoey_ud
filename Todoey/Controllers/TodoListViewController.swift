@@ -9,13 +9,13 @@
 import UIKit
 import RealmSwift
 
-class TodoListViewController: UITableViewController {
+class TodoListViewController: SwipeTableViewController {
 
     var todoItems: Results<Item>?
     let realm = try! Realm()
     
-    // do what's in 'didSet' straight after variable gets the value
     var selectedCategory: Category? {
+        // do what's in 'didSet' straight after variable gets the value
         didSet {
             loadItems()
         }
@@ -36,19 +36,18 @@ class TodoListViewController: UITableViewController {
     // what to put in which row, will be called Int times returned by func above
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
         if let item = todoItems?[indexPath.row] {
-            
             cell.textLabel?.text = item.title
             
             // Ternary operator ==>
             // value = condition ? valueIfTrue : valueIfFalse
             cell.accessoryType = item.done ? .checkmark : .none
         } else {
+            print("labas no items")
             cell.textLabel?.text = "No Items Added"
         }
-
         
         return cell
     }
@@ -120,6 +119,19 @@ class TodoListViewController: UITableViewController {
         tableView.reloadData()
     }
     
+    //MARK: - Delete Data from Swipe
+    
+    override func updateModel(at indexPath: IndexPath) {
+        if let item = self.todoItems?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(item)
+                }
+            } catch {
+                print("Error saving done status, \(error)")
+            }
+        }
+    }
 }
 
 //MARK: - Search Bar Methods
