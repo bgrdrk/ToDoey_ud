@@ -8,11 +8,14 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 class TodoListViewController: SwipeTableViewController {
 
     var todoItems: Results<Item>?
     let realm = try! Realm()
+    
+    @IBOutlet weak var searchBar: UISearchBar!
     
     var selectedCategory: Category? {
         // do what's in 'didSet' straight after variable gets the value
@@ -24,7 +27,25 @@ class TodoListViewController: SwipeTableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 //        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
-
+        tableView.separatorStyle = .none
+    }
+    
+    // just before user sees anything on a screen
+    override func viewWillAppear(_ animated: Bool) {
+        
+        title = selectedCategory!.name
+        
+        if let colourHex = selectedCategory?.bgColor {
+            guard let navBar = navigationController?.navigationBar else {fatalError("Navigation controller does not exist.")}
+            
+            if let navBarColour = UIColor(hexString: colourHex) {
+                let contrastingColor = ContrastColorOf(navBarColour, returnFlat: true)
+                navBar.backgroundColor = navBarColour
+                navBar.tintColor = contrastingColor
+                navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor: contrastingColor]
+                searchBar.barTintColor = navBarColour
+            }
+        }
     }
 
     //MARK: - Tableview Datasource methods
@@ -40,6 +61,13 @@ class TodoListViewController: SwipeTableViewController {
         
         if let item = todoItems?[indexPath.row] {
             cell.textLabel?.text = item.title
+            
+            if let colour = UIColor(hexString: selectedCategory!.bgColor)?.darken(byPercentage: CGFloat(indexPath.row) / CGFloat(todoItems!.count)) {
+                cell.backgroundColor = colour
+                cell.textLabel?.textColor = ContrastColorOf(colour, returnFlat: true)
+            }
+            
+            
             
             // Ternary operator ==>
             // value = condition ? valueIfTrue : valueIfFalse
